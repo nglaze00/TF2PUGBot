@@ -19,9 +19,18 @@ import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.requests.restaction.MessageAction;
 
+//TODO !profile https://steamcommunity.com/id/iwyy/ doesn't work because of last slash
+//TODO "!classes" should show current prefs; "!profile" should show current steam profile (in URL format)
+//TODO sending someone else's profile when you(Discord) is already in the database shouldn't be allowed
+
 
 public class PrivateMessageManager extends ListenerAdapter {
 	
+	private PlayerDatabaseManager playerDB;
+	
+	public PrivateMessageManager(PlayerDatabaseManager playerDB) {
+		this.playerDB = playerDB;
+	}
 	public static void sendDM(User recipient, String msg) {
 		/**
 		 * Sends a direct message to the given user
@@ -50,8 +59,6 @@ public class PrivateMessageManager extends ListenerAdapter {
         done:
         if (event.isFromType(ChannelType.PRIVATE) && !author.isBot()) //If this message was sent to a PrivateChannel
         {
-            //The message was sent in a PrivateChannel.
-            //In this example we don't directly use the privateChannel, however, be sure, there are uses for it!
         	String[] commands = msg.split(" ");
         	for(int index=0;index<commands.length;index++) {commands[index]=commands[index].toLowerCase();}
         	if(commands[0].equals("!profile"))
@@ -70,8 +77,14 @@ public class PrivateMessageManager extends ListenerAdapter {
                  	sendDM(author, errorMsg);
                 }
                 else {
-                	sendDM(author, "Profile ID successfully recorded as: " + profileID);
-                 	// ADD ID TO database
+
+                 	try {
+                 		playerDB.addNewPlayer(profileID);
+                 		sendDM(author, "You have been successfully added to the player database under this Steam profile! Use !classes to view / update your class preferences.");
+                 	}
+                	catch (Exception e) {
+                		sendDM(author, "This SteamID is already in the database! Use !classes to view or update your current class preferences.");
+                	}
                 }
         	}
         	else if(commands[0].equals("!classes")) //!classes Ultiduo(Soldier,Med) 4s(ANY) 6s()")

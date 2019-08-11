@@ -18,11 +18,14 @@ public class Player {
 	private float elo;
 	private int wins;
 	private int losses;
-	private boolean[] ultiClassPrefs = new boolean[2];
-	private boolean[] foursClassPrefs = new boolean[4];
-	private boolean[] sixesClassPrefs = new boolean[5];
+	private boolean[] ultiClassPrefs;
+	private boolean[] foursClassPrefs;
+	private boolean[] sixesClassPrefs;
 	
 	public Player(String steamID64, float elo, int wins, int losses) {
+		ultiClassPrefs = new boolean[] {false, false};
+		foursClassPrefs = new boolean[] {false, false, false, false};
+		sixesClassPrefs = new boolean[] {false, false, false, false, false};
 		this.steamID64 = steamID64;
 		this.elo = elo;
 		this.wins = wins;
@@ -40,9 +43,53 @@ public class Player {
 	
 	public String getID() {return steamID64;}
 	public float getElo() {return elo;} 
+	public int getWins() {return wins;}
+	public int getLosses() {return losses;}
 	public boolean[] getUltiduoClasses() {return ultiClassPrefs;}
-	public boolean[] getFoursClasses() {return foursClassPrefs;}
-	public boolean[] getSixesClasses() {return sixesClassPrefs;}
+	public String getUltiduoClassesAsString() 
+	{
+		String res = "";
+		for (boolean pref : ultiClassPrefs) {
+			if (pref) {
+				res += "1";
+			}
+			else {
+				res += "0";
+			}
+		}
+		return res;
+	}
+	public String getFoursClassesAsString() 
+	{
+		String res = "";
+		for (boolean pref : foursClassPrefs) {
+			if (pref) {
+				res += "1";
+			}
+			else {
+				res += "0";
+			}
+		}
+		return res;
+	}
+	public String getSixesClassesAsString() 
+	{
+		String res = "";
+		for (boolean pref : sixesClassPrefs) {
+			if (pref) {
+				res += "1";
+			}
+			else {
+				res += "0";
+			}
+		}
+		return res;
+	}
+	
+	public String queryValues() { 
+		return "VALUES('" + getID() + "', " + getElo() + ", " + getWins() + ", " + getLosses() + ", '" + getUltiduoClassesAsString() + "', '" 
+				+ getFoursClassesAsString() + "', '" + getSixesClassesAsString() + "')";
+	}
 	
 	public void setElo(float newElo) {elo=newElo;}
 	public void setUltiduoClassPrefs(boolean[] ultiduo) {ultiClassPrefs=ultiduo;}
