@@ -27,12 +27,12 @@ public class PugRunner
     public static void main(String[] args)
     {
     	PugRunner bot = new PugRunner();
-        
+        String token = "token-goes-here";
 
         try
         {
         	PlayerDatabaseManager playerDB = new PlayerDatabaseManager("gausspugs_players");
-            JDA jda = new JDABuilder("NjA5MjA2MDU1MDk1ODk0MDIx.XVBaHA.bW5RewNfZkvIZnOrmxoTFc2MpGk")         // The token of the account that is logging in.
+            JDA jda = new JDABuilder(token)         // The token of the account that is logging in.
                     .addEventListener(new PrivateMessageManager(playerDB))  // An instance of a class that will handle events.
                     .addEventListener(bot.new VoiceChannelListener())
                     .build();
