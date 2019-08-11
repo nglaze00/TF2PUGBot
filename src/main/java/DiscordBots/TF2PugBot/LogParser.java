@@ -12,9 +12,9 @@ public class LogParser {
 	public static final String[] uploaders = {"U:1:351789566"}; //The uploader IDs of all servers used by the pugbot
 	public static int matchEndID(Game g)
 	{
-		long matchStartTime = 500; //g.getStartTime(); FIXME: HARDCODED EPOCH FOR TEST
+		long matchStartTime = g.getStartTime();
 		long matchEndTime = -1;
-		String player = "76561198312055294"; //g.getPlayers()[0].getID(); //FIXME: HARDCODED PLAYER FOR TEST
+		String player = g.getRedTeam()[0].getID();
 		for(String upload : uploaders)
 		{
 			try 
@@ -25,7 +25,6 @@ public class LogParser {
 				int ID = -1;
 				while((line = in.readLine())!=null) 
 				{
-					System.out.println(line);
 					if(line.contains("\"id\": ")) {
 						String temp = line.split("\"id\": ")[1];
 						ID = Integer.parseInt(temp.substring(0,temp.indexOf(",")));						
@@ -54,9 +53,9 @@ public class LogParser {
 			String line = in.readLine();
 			int redScore = Integer.parseInt(line.split("score\": ")[1].substring(0,line.split("score\": ")[1].indexOf(",")));
 			int blueScore = Integer.parseInt(line.split("score\": ")[2].substring(0,line.split("score\": ")[2].indexOf(",")));
-			if(redScore == blueScore) {return "tie";}
+			if(redScore == blueScore)	{return "tie";}
 			else if(redScore>blueScore) {return "red";}
-			else {return "blue";}
+			else 						{return "blue";}
 		}
 		catch(Exception e) {System.out.println("Cannot recieve match stats");}
 		return null;

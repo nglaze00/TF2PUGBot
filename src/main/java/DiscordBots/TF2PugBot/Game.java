@@ -11,8 +11,15 @@ public class Game {
 	private ArrayList<Player> bluPlayers;
 	private ArrayList<Player> redPlayers;
 	private Winner winner = null;
+	private long startTime;
 	
-	
+	public Game(long sTime){startTime=sTime;}
+	public void addPlayer(Player p, boolean isRed) 
+	{
+		if(isRed) 	{ redPlayers.add(p); }
+		else 		{ bluPlayers.add(p); }
+	}
+	public long getStartTime() {return startTime;}
 	public void setWinner(String victor) 
 	{
 		switch (victor.toLowerCase()) 
@@ -23,4 +30,6 @@ public class Game {
 			default:{System.out.println("Match is fucking broken oopsie woopsie");}
 		}
 	}
+	public Player[] getBluTeam() {return (Player[]) bluPlayers.toArray();}
+	public Player[] getRedTeam() {return (Player[]) redPlayers.toArray();}
 }
