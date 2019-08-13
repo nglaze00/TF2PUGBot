@@ -39,5 +39,15 @@
 	  <artifactId>steam-web-api</artifactId>
 	  <version>1.2</version>
 	</dependency>
+	<dependency>
+	    <groupId>com.ibasco.agql</groupId>
+	    <artifactId>agql-steam-master</artifactId>
+	    <version>0.1.7</version>
+	</dependency>
+	<dependency>
+	    <groupId>com.ibasco.agql</groupId>
+	    <artifactId>agql-source-query</artifactId>
+	    <version>0.1.7</version>
+	</dependency>
   </dependencies>
 </project>

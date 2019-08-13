@@ -27,9 +27,9 @@ import net.dv8tion.jda.core.requests.restaction.MessageAction;
 
 public class PrivateMessageManager extends ListenerAdapter {
 	
-	private PlayerDatabaseManager playerDB;
+	private PlayerDatabase playerDB;
 	
-	public PrivateMessageManager(PlayerDatabaseManager playerDB) {
+	public PrivateMessageManager(PlayerDatabase playerDB) {
 		this.playerDB = playerDB;
 	}
 	public static void sendDM(User recipient, String msg) {

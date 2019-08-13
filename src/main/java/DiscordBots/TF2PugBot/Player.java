@@ -5,6 +5,8 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Arrays;
 
+import DiscordBots.TF2PugBot.PugRunner.Format;
+
 /**
  * Hello world!
  *
@@ -21,6 +23,7 @@ public class Player {
 	private boolean[] ultiClassPrefs;
 	private boolean[] foursClassPrefs;
 	private boolean[] sixesClassPrefs;
+	private int assignedClass; // See Game.getClassName() for values
 	
 	public Player(String steamID64, String discordID, double elo, int wins, int losses) {
 		ultiClassPrefs = new boolean[] {false, false};
@@ -47,11 +50,27 @@ public class Player {
 	public double getElo() {return elo;} 
 	public int getWins() {return wins;}
 	public int getLosses() {return losses;}
+	public int getAssignedClass() {return assignedClass;}
 
-	public String getUltiduoClassesAsString() 
+	public String getClassPrefsAsString(Format format) 
 	{
+		boolean[] classPrefs = null;
 		String res = "";
-		for (boolean pref : ultiClassPrefs) {
+		switch (format) {
+			case ULTIDUO: {
+				classPrefs = ultiClassPrefs;
+				break;
+			}
+			case FOURS: {
+				classPrefs = foursClassPrefs;
+				break;
+			}
+			case SIXES: {
+				classPrefs = sixesClassPrefs;
+				break;
+			}
+		}
+		for (boolean pref : classPrefs) {
 			if (pref) {
 				res += "1";
 			}
@@ -61,32 +80,7 @@ public class Player {
 		}
 		return res;
 	}
-	public String getFoursClassesAsString() 
-	{
-		String res = "";
-		for (boolean pref : foursClassPrefs) {
-			if (pref) {
-				res += "1";
-			}
-			else {
-				res += "0";
-			}
-		}
-		return res;
-	}
-	public String getSixesClassesAsString() 
-	{
-		String res = "";
-		for (boolean pref : sixesClassPrefs) {
-			if (pref) {
-				res += "1";
-			}
-			else {
-				res += "0";
-			}
-		}
-		return res;
-	}
+
 	public String getPreferences() 
 	{
 		String preferences = "";
@@ -107,14 +101,17 @@ public class Player {
 		return preferences;
 	}
 	public String queryValues() { 
-		return "VALUES('" + getSteamID() + "', '" + getDiscordID() + "', " + getElo() + ", " + getWins() + ", " + getLosses() + ", '" + getUltiduoClassesAsString() + "', '" 
-				+ getFoursClassesAsString() + "', '" + getSixesClassesAsString() + "')";
+		return "VALUES('" + getSteamID() + "', '" + getDiscordID() + "', " + getElo() + ", " + getWins() + ", " + getLosses() + ", '" + getClassPrefsAsString(Format.ULTIDUO) + "', '" 
+				+ getClassPrefsAsString(Format.FOURS) + "', '" + getClassPrefsAsString(Format.SIXES) + "')";
 	}
 	
 	public void setElo(double newElo) {elo=newElo;}
 	public void setUltiduoClassPrefs(boolean[] ultiduo) {ultiClassPrefs=ultiduo;}
 	public void setFoursClassPrefs(boolean[] fours) {foursClassPrefs=fours;}
 	public void setSixesClassPrefs(boolean[] sixes) {sixesClassPrefs=sixes;}
+	public void setAssignedClass(int assignment) {
+		assignedClass = assignment;
+	}
 	
 	private static boolean[] stringToBooleanArray(String binaryString) {
 		boolean[] res = new boolean[binaryString.length()];
@@ -156,4 +153,7 @@ public class Player {
         	return "error";
         } 
 	}
+
+	
+
 }

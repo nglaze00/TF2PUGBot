@@ -12,7 +12,7 @@ import java.sql.Statement;
  * Hello world!
  *
  */
-public class PlayerDatabaseManager {
+public class PlayerDatabase {
 	public static String databaseUsername = "discordbot";
 	public static String databasePassword = "pugrunner";
 	public static int DEFAULTELO = 1200;
@@ -22,7 +22,7 @@ public class PlayerDatabaseManager {
 	private HashMap<String, Player> playersByDiscordID;
 	private Connection connect;
 	
-	public PlayerDatabaseManager(String databaseName){
+	public PlayerDatabase(String databaseName){
 		try {
 			playersBySteamID = new HashMap<String, Player>();
 			playersByDiscordID = new HashMap<String, Player>();

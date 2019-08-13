@@ -1,6 +1,11 @@
 package DiscordBots.TF2PugBot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import DiscordBots.TF2PugBot.PugRunner.Format;
+import net.dv8tion.jda.core.entities.Member;
 /**
  * Hello world!
  *
@@ -12,8 +17,27 @@ public class Game {
 	private ArrayList<Player> redPlayers;
 	private Winner winner = null;
 	private long startTime;
+	private Format format;
+	private int teamSize;
 	
-	public Game(long sTime){startTime=sTime;}
+	public Game(long sTime, Format format){
+		startTime=sTime;
+		this.format = format;
+		switch (format) {
+			case ULTIDUO: {
+				teamSize = 2;
+				break;
+			}
+			case FOURS: {
+				teamSize = 4;
+				break;
+			}
+			case SIXES: {
+				teamSize = 6;
+				break;
+			}
+		}
+	}
 	public void addPlayer(Player p, boolean isRed) 
 	{
 		if(isRed) 	{ redPlayers.add(p); }
@@ -88,5 +112,200 @@ public class Game {
 			default:{System.out.println("Match is fucking broken oopsie woopsie");}
 		}
 	}
-
+	public Player[][] sortIntoTeams(ArrayList<Player> queuePlayers) {
+		
+		// Starting with class with least players preferring it, add highest Elo player to team with lower total elo. repeat until that class is filled
+		// If not enough preferring a class, skip it and add remaining players at the end
+		
+		// Class orders:
+		// Ulti: Soldier, Medic
+		// Fours: Scout, Soldier, Demo, Medic
+		// Sixes: Scout, Roamer, Pocket, Demo, Medic
+		ArrayList<Player> unsortedPlayers = new ArrayList<>(queuePlayers);
+		int[] playersPerClass = playersPerClass(format);
+		
+		// Partition players by class preference
+		ArrayList<ArrayList<Player>> playersPreferringClass = new ArrayList<>();
+		for(int i = 0; i < playersPerClass.length; i++) playersPreferringClass.add(new ArrayList<Player>());
+		
+		for (Player player : queuePlayers) {
+			String playerPrefs = player.getClassPrefsAsString(format);
+			for (int i = 0; i < playerPrefs.length(); i++) {
+				if ( playerPrefs.charAt(i) == '1') {
+					playersPreferringClass.get(i).add(player);
+				}
+			}
+		}
+		
+		
+		Player[][] teams = new Player[2][teamSize]; // blu, red
+		double bluElo = 0;
+		double redElo = 0;
+		
+		int bluPlayers = 0;
+		int redPlayers = 0;
+		
+		int leastPreferredCount;
+		int leastPreferredClass;
+		ArrayList<Integer> classesSorted = new ArrayList<Integer>();
+		int remainingSlots[][] = {Arrays.copyOf(playersPerClass, playersPerClass.length), 
+				  				  Arrays.copyOf(playersPerClass, playersPerClass.length)}; // blu, red
+		
+		
+		for (int classIdx = 0; classIdx < playersPreferringClass.size(); classIdx++) {
+			// Find remaining class with least number of players preferring
+			leastPreferredCount = 13;
+			leastPreferredClass = -1;
+			for (int i = 0; i < playersPreferringClass.size(); i++) {
+				int numPlayersPreferringClass = playersPreferringClass.get(i).size();
+				if (numPlayersPreferringClass < leastPreferredCount && !classesSorted.contains(i)) {
+					leastPreferredCount = numPlayersPreferringClass;
+					leastPreferredClass = i;
+				}
+			}
+			// Sort players preferring this class onto teams
+			ArrayList<Player> playersToSortToClass = playersPreferringClass.get(leastPreferredClass);
+			while (playersToSortToClass.size() > 0) {
+				// Find player with highest elo
+				double maxElo = 0;
+				int maxEloIdx = -1;
+				for (int i = 0; i < playersToSortToClass.size(); i++) {
+					double playerElo = playersToSortToClass.get(i).getElo(); 
+					if (playerElo > maxElo) {
+						maxElo = playerElo;
+						maxEloIdx = i;
+					}
+				}
+				Player playerToSort = playersToSortToClass.get(maxEloIdx);
+				playerToSort.setAssignedClass(leastPreferredClass);
+				// Put them on team with less elo
+				if ((bluElo == 0 && redElo == 0) || bluElo / bluPlayers < redElo / redPlayers &&  remainingSlots[0][leastPreferredClass] > 0) {
+					teams[0][getIndexForClass(format, leastPreferredClass, remainingSlots[0][leastPreferredClass])] = playerToSort;
+					bluElo += playerToSort.getElo();
+				}
+				else {
+					teams[1][getIndexForClass(format, leastPreferredClass, remainingSlots[0][leastPreferredClass])] = playerToSort;
+					redElo += playerToSort.getElo();
+				}
+				
+				playersToSortToClass.remove(playerToSort);
+				unsortedPlayers.remove(playerToSort);
+			}
+			
+			classesSorted.add(leastPreferredClass);			
+		}
+		
+		// Sort remaining players
+		while(unsortedPlayers.size() > 0) {
+			double maxElo = 0;
+			Player maxEloPlayer = null;
+			// Get remaining player with highest elo
+			for (Player player : unsortedPlayers) {
+				if (player.getElo() > maxElo) {
+					maxElo = player.getElo();
+					maxEloPlayer = player;
+				}
+			}
+			
+			// Put on team with lower elo
+			
+			if ((bluElo == 0 && redElo == 0) || bluElo / bluPlayers < redElo / redPlayers && (Arrays.asList(remainingSlots[0]).contains(1) || Arrays.asList(remainingSlots[0]).contains(2))) {
+				for (int i = 0; i < remainingSlots[0].length; i++) {
+					if (remainingSlots[0][i] > 0) {
+						teams[0][getIndexForClass(format, i, remainingSlots[0][i])] = maxEloPlayer;
+						remainingSlots[0][i] -= 1;
+						maxEloPlayer.setAssignedClass(i);
+						break;
+					}
+				}
+				bluElo += maxElo;
+			}
+			else {
+				for (int i = 0; i < remainingSlots[1].length; i++) {
+					if (remainingSlots[1][i] > 0) {
+						teams[1][getIndexForClass(format, i, remainingSlots[1][i])] = maxEloPlayer;
+						remainingSlots[1][i] -= 1;
+						maxEloPlayer.setAssignedClass(i);
+					}
+				}
+				redElo += maxElo;
+			}
+			
+			unsortedPlayers.remove(maxEloPlayer);
+		}
+		return teams;
+	}
+	
+	public int getTeamSize() {return teamSize;}
+	
+	public static int[] playersPerClass(Format format) {
+		switch (format) {
+			case ULTIDUO: {
+				return new int[] {1, 1};
+			}
+			case FOURS: {
+				return new int[] {1, 1, 1, 1};
+			}
+			case SIXES: {
+				return new int[] {2, 1, 1, 1, 1};
+			}
+		}
+		return null;
+	}
+	public static String getClassName(Format format, int classIdx) {
+		switch (format) {
+			case ULTIDUO: {
+				switch (classIdx) {
+					case 0: return "Soldier";
+					case 1: return "Medic";
+				}
+			}
+			case FOURS: {
+				switch (classIdx) {
+					case 0: return "Scout";
+					case 1: return "Soldier";
+					case 2: return "Demo";
+					case 3: return "Medic";
+				}
+			}
+			case SIXES: {
+				switch (classIdx) {
+					case 0: return "Scout";
+					case 1: return "Roamer";
+					case 2: return "Pocket";
+					case 3: return "Demo";
+					case 4: return "Medic";
+				}
+			}
+		}
+		return "";
+	}
+	public static int getIndexForClass(Format format, int classIdx, int remainingSlots) {
+		switch (format) {
+			case ULTIDUO: {
+				switch (classIdx) {
+					case 0: return 0;
+					case 1: return 1;
+				}
+			}
+			case FOURS: {
+				switch (classIdx) {
+					case 0: return 0;
+					case 1: return 1;
+					case 2: return 2;
+					case 3: return 3;
+				}
+			}
+			case SIXES: {
+				switch (classIdx) {
+					case 0: return 2 - remainingSlots;
+					case 1: return 2;
+					case 2: return 3;
+					case 3: return 4;
+					case 4: return 5;
+				}
+			}
+		}
+		return -1;
+	}
 }

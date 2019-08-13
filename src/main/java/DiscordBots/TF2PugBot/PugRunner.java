@@ -12,6 +12,7 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -24,33 +25,52 @@ import net.dv8tion.jda.core.JDA;
  * Hello world!
  *
  */
+
+// TODO make all this shit not static
 public class PugRunner
 {
-	static Guild server;//FIXME:Server needs to be the server actually 
-    static VoiceChannel ultiQueue;
+	static String token = "";
+    static String discordPugServerId = ""; // Do event.getGuild().getId() to get server ID; update for gausspugs
+    static String tf2PugServerIP = "192.223.26.144";
+    static int tf2PugServerPort = 27015;
+    static String tf2PugServerRCONPassword = ""; 
+    static String sixesCfg = "ugc_6v_standard";
+    static String ultiCfg = "etf2l_ultiduo";
+    static String foursCfg = null; // Not on server
+	
+	static Guild server;
+	static VoiceChannel ultiQueue;
     static VoiceChannel foursQueue;
     static VoiceChannel sixesQueue;
+    static TF2Server tf2Server1;
+    static PlayerDatabase playerDB;
     
-    ArrayList<Game> currentGames = new ArrayList<Game>();
+    static JDA jda;
+    
+    
+    public ArrayList<Game> currentGames = new ArrayList<Game>();
 	public enum Format{ULTIDUO,FOURS,SIXES}
-    public static void main(String[] args)
+public static void main(String[] args)
     {
     	PugRunner bot = new PugRunner();
-        String token = "NjA5MjA2MDU1MDk1ODk0MDIx.XVBsfg.EI4crJuIlXK0Zc4AgT6AtLT3zCo";
-        String pugServerId = "609217958950207508"; // Do event.getGuild().getId() to get server ID
-        PlayerDatabaseManager playerDB;
+        
+        tf2Server1 = new TF2Server(tf2PugServerIP, tf2PugServerPort, tf2PugServerRCONPassword);
+        
 
         try
         {
-        	playerDB = new PlayerDatabaseManager("gausspugs_players");
-            JDA jda = new JDABuilder(token)         // The token of the account that is logging in.
+        	playerDB = new PlayerDatabase("gausspugs_players");
+            jda = new JDABuilder(token)         // The token of the account that is logging in.
                     .addEventListener(new PrivateMessageManager(playerDB))  // An instance of a class that will handle events.
                     .addEventListener(bot.new VoiceChannelListener())
                     .build();
             jda.awaitReady(); // Blocking guarantees that JDA will be completely loaded.
-            setDiscordServer(jda, pugServerId);
+            setDiscordServer(jda, discordPugServerId);
             
             System.out.println("Finished Building JDA / Discord server connection!");
+            
+            System.out.println("Testing server configuration...");
+            tf2Server1.configurePUG("etf2l", "ultiduo_baloo");
         }
         catch (LoginException e)
         {
@@ -89,20 +109,56 @@ public class PugRunner
 		//Create Game Instance
 		Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		long startTime = calendar.getTimeInMillis() / 1000L;
-		currentGames.add(new Game(startTime));
+		Game game = new Game(startTime, type);
+		currentGames.add(game);
 		
+		// Sort players into teams
+		List<Member> queueMembers = server.getVoiceChannelsByName(f+" Queue",true).get(0).getMembers();
+		HashMap<String, Player> playersByDiscordID = playerDB.getPlayersByDiscordID();
+		ArrayList<Player> queuePlayers = new ArrayList<Player>();
+		for (Member queueMember : queueMembers) {
+			Player player = playersByDiscordID.get(queueMember.getUser().getId());
+			queuePlayers.add(player);
+		}
+		Player[][] teams = game.sortIntoTeams(queuePlayers);
+				
 		//Add Players to VCs
-		Player[][] teams = currentGames.get(currentGames.size()-1).getTeams(server.getVoiceChannelsByName(f+" Queue",true).get(0).getMembers());
 		for(Player p : teams[0])//BLU
 		{addUserToVoiceChannel(server.getVoiceChannelsByName(f+" BLU "+gameNum,true).get(0),p.getMember());}
 		for(Player p : teams[1])//RED
 		{addUserToVoiceChannel(server.getVoiceChannelsByName(f+" RED "+gameNum,true).get(0),p.getMember());}
-		currentGames.get(currentGames.size()-1).setFormat(type);
-		currentGames.get(currentGames.size()-1).setFormat(type);
-		//TF2 Server Setup
+
 		
+		// Configure TF2 server
+		if(type==Format.ULTIDUO) {
+			tf2Server1.configurePUG(ultiCfg, "ultiduo_baloo");
+		}
+    	else if(type==Format.FOURS) {
+    		tf2Server1.configurePUG(foursCfg, "koth_product_rcx");
+    	}
+    	else if(type==Format.SIXES) {
+    		tf2Server1.configurePUG(sixesCfg, "cp_process_final");
+    	}
+		
+		// DM each player connect info
+		int teamSize = game.getTeamSize();
+		
+		for (int i = 0; i < 2; i++) { 
+			String assignedTeam;
+			if (i == 0) {
+				assignedTeam = "BLU";
+			}
+			else {
+				assignedTeam = "RED";
+			}
+			for (int j = 0; j < teamSize; j++) {
+				Player player = teams[i][j];
+				PrivateMessageManager.sendDM(jda.getUserById(player.getDiscordID()), tf2Server1.getConnectInfo() 
+						+ "\nteam: " + assignedTeam + " class: " + Game.getClassName(type, player.getAssignedClass()));
+			}
+		}
 	}
-    private void endGame(Game g, PlayerDatabaseManager playerDB, int ID) 
+    private void endGame(Game g, PlayerDatabase playerDB, int ID) 
     {
     	String result = LogParser.getResult(ID);
     	g.setWinner(result);
