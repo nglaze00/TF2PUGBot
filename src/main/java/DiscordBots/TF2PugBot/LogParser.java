@@ -14,7 +14,7 @@ public class LogParser {
 	{
 		long matchStartTime = g.getStartTime();
 		long matchEndTime = -1;
-		String player = g.getRedTeam()[0].getID();
+		String player = g.getRedTeam()[0].getDiscordID();
 		for(String upload : uploaders)
 		{
 			try 

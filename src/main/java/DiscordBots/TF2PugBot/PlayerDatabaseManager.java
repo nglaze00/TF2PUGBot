@@ -18,12 +18,14 @@ public class PlayerDatabaseManager {
 	public static int DEFAULTELO = 1200;
 	
 	private String databaseName;
-	private HashMap<String, Player> players;
+	private HashMap<String, Player> playersBySteamID;
+	private HashMap<String, Player> playersByDiscordID;
 	private Connection connect;
 	
 	public PlayerDatabaseManager(String databaseName){
 		try {
-			players = new HashMap<String, Player>();
+			playersBySteamID = new HashMap<String, Player>();
+			playersByDiscordID = new HashMap<String, Player>();
 			
 			Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
 			
@@ -46,13 +48,16 @@ public class PlayerDatabaseManager {
 			ResultSet selection = stmt.executeQuery("SELECT * FROM " + databaseName + ".players");
 			while(selection.next()) {
 				String steamID64 = selection.getString("steamID64");
+				String discordID = selection.getString("discordID");
 				float elo = selection.getFloat("elo");
 				int wins = selection.getInt("wins");
 				int losses = selection.getInt("losses");
 				String prefs_ulti = selection.getString("prefs_ulti");
 				String prefs_fours = selection.getString("prefs_fours");
 				String prefs_sizes = selection.getString("prefs_sixes");
-				players.put(steamID64, new Player(steamID64, elo, wins, losses, prefs_ulti, prefs_fours, prefs_sizes));
+				Player newPlayer = new Player(steamID64, discordID, elo, wins, losses, prefs_ulti, prefs_fours, prefs_sizes);
+				playersBySteamID.put(steamID64, newPlayer);
+				playersByDiscordID.put(discordID, newPlayer);
 				System.out.println("Loaded player " + steamID64 + " from database");
 			}
 		} 
@@ -65,12 +70,13 @@ public class PlayerDatabaseManager {
 	    }
 	}
 	
-	public void addNewPlayer(String steamID64) throws Exception {
-		Player newPlayer = new Player(steamID64, DEFAULTELO, 0, 0);
-		if (players.keySet().contains(steamID64)) {
+	public void addNewPlayer(String steamID64, String discordID) throws Exception {
+		Player newPlayer = new Player(steamID64, discordID, DEFAULTELO, 0, 0);
+		if (playersBySteamID.keySet().contains(steamID64)) {
 			throw new Exception("Player already in database");
 		}
-		players.put(steamID64, newPlayer);
+		playersBySteamID.put(steamID64, newPlayer);
+		playersByDiscordID.put(discordID, newPlayer);
 		Statement stmt = null;
 	    try {
 
@@ -83,6 +89,16 @@ public class PlayerDatabaseManager {
 	    } catch(SQLException e) {
 	    	e.printStackTrace();
 	    } 
+	}
+	public void updateDatabase(Player player) {
+		try {
+			Statement stmt = connect.createStatement();
+			stmt.executeUpdate("REPLACE INTO " + databaseName + ".players " + player.queryValues());
+		} 
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
 	}
 	public void updateDatabase(ArrayList<Player> players) {
 		try {
@@ -98,8 +114,10 @@ public class PlayerDatabaseManager {
 	}
 	
 	public void updateDatabaseAll() {
-		updateDatabase(new ArrayList<Player>(players.values()));
+		updateDatabase(new ArrayList<Player>(playersBySteamID.values()));
 	}
 	
-	public HashMap<String, Player> getPlayers() {return players;}
+	public HashMap<String, Player> getPlayersBySteamID() {return playersBySteamID;}
+	public HashMap<String, Player> getPlayersByDiscordID() {return playersByDiscordID;}
+
 }

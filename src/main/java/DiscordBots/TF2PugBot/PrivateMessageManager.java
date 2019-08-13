@@ -11,6 +11,7 @@ import com.lukaspradel.steamapi.webapi.client.SteamWebApiClient;
 
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.ChannelType;
+import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.PrivateChannel;
@@ -46,30 +47,34 @@ public class PrivateMessageManager extends ListenerAdapter {
     public void onMessageReceived(MessageReceivedEvent event)
     {
         //These are provided with every event in JDA
+		
         JDA jda = event.getJDA();                       //JDA, the core of the api.
         long responseNumber = event.getResponseNumber();//The amount of discord events that JDA has received since the last reconnect.
 
         //Event specific information
         User author = event.getAuthor();                //The user that sent the message
         Message message = event.getMessage();           //The message that was received.
-        
 
         String msg = message.getContentDisplay();              //This returns a human readable version of the Message. Similar to
                                                         // what you would see in the client.
         done:
         if (event.isFromType(ChannelType.PRIVATE) && !author.isBot()) //If this message was sent to a PrivateChannel
         {
-        	String[] commands = msg.split(" ");
-        	for(int index=0;index<commands.length;index++) {commands[index]=commands[index].toLowerCase();}
-        	if(commands[0].equals("!profile"))
+        	msg.toLowerCase();
+        	if(msg.contains("!profile"))
         	{
-        		if(commands.length==1) //Help on command
-        		{
-        			sendDM(author,"Command usage: !profile [profile-link]");
+        		String profileID = "";
+    			try
+    			{
+    				 profileID = Player.urlToProfileID(Player.extractURL(msg.substring(msg.indexOf("http"))));
+    			}
+    			catch(Exception e) 
+    			{
+    				sendDM(author,"Command usage: !profile [profile-link]");
         			sendDM(author,"Example: !profile https://steamcommunity.com/id/exeloar/");
         			break done;
-        		}
-    			String profileID = Player.urlToProfileID(Player.extractURL(commands[1]));
+    			}
+    			String discordID = author.getId();
                 if (profileID == "error") {
                 	String errorMsg = "No valid profile ID found. Make sure your URL is in one of the formats: https://steamcommunity.com/id/(vanity ID) \n"
                  			+ "https://steamcommunity.com/profiles/(ID number)";
@@ -79,7 +84,7 @@ public class PrivateMessageManager extends ListenerAdapter {
                 else {
 
                  	try {
-                 		playerDB.addNewPlayer(profileID);
+                 		playerDB.addNewPlayer(profileID, discordID);
                  		sendDM(author, "You have been successfully added to the player database under this Steam profile! Use !classes to view / update your class preferences.");
                  	}
                 	catch (Exception e) {
@@ -87,29 +92,36 @@ public class PrivateMessageManager extends ListenerAdapter {
                 	}
                 }
         	}
-        	else if(commands[0].equals("!classes")) //!classes Ultiduo(Soldier,Med) 4s(ANY) 6s()")
+        	else if(msg.contains("!classes"))
         	{
         		String classSelect="";
-        		if(commands.length==1) 
+        		
+        		if(msg.length()==8) 
         		{
-        			sendDM(author,"Command usage: !classes [format](class1,class2,class3)");
+        			sendDM(author,"Command usage: !classes [format](class1,class2,class3)"
+        					+ "\n !classes current to see your current preferences");
         			sendDM(author,"Example: !classes Ultiduo(Soldier,Med) 4s(ALL) 6s(Med,Scout,Roamer,Pocket,Demo)");
         			break done;
         		}
-        		if(true/*Database does not contain player*/) {sendDM(author,"We do not have you as a player in our database yet. Please send us your profile (!profile)");}
-        		Player player = new Player(null, 0, 0, 0, null, null, null);//FIXME:Should be read from above
-        		for(int i=1;i<commands.length;i++) 
-        		{
-        			String format = commands[i].substring(0,commands[i].indexOf("("));
+        		Player player = playerDB.getPlayersByDiscordID().get(author.getId());
+        		if(player == null) {sendDM(author,"We do not have you as a player in our database yet. Please send us your profile (!profile)");break done;}
+    			if(msg.contains("current")) {sendDM(author, player.getPreferences());break done;}
+    			else 
+    			{
+    				String format="";
+        			try{format = msg.substring(0,msg.indexOf("("));}
+        			catch(Exception e) {sendDM(author,"Incorrect syntax for !classes. Run !classes to see accepted usage");break done;}
         			if(format.equals("ultiduo")) 
         			{
-        				classSelect+="ultiduo - ";
+        				classSelect+="Ultiduo - ";
         				boolean[] ultiduo = {false,false};
         				if(commands[i].contains("all")||commands[i].contains("any")) {ultiduo[0]=true;classSelect+="Soldier ";ultiduo[1]=true;classSelect+="Medic ";}
         				else
         				{
-        					if(commands[i].contains("soldier")||commands[i].contains("pocket")) {ultiduo[0]=true;classSelect+="Soldier ";}
-        					if(commands[i].contains("med")||commands[i].contains("medic")) {ultiduo[1]=true;classSelect+="Medic ";}
+        					boolean any = false;
+        					if(commands[i].contains("soldier")||commands[i].contains("pocket")) {any= true;ultiduo[0]=true;classSelect+="Soldier ";}
+        					if(commands[i].contains("med")||commands[i].contains("medic")) {any= true;ultiduo[1]=true;classSelect+="Medic ";}
+        					if(!any) {break done;}
         				}
         				player.setUltiduoClassPrefs(ultiduo);
         				classSelect+="\n";
@@ -127,10 +139,12 @@ public class PrivateMessageManager extends ListenerAdapter {
         				}
         				else
         				{
-        					if(commands[i].contains("scout")) {fours[0]=true;classSelect+="Scout ";}
-	        				if(commands[i].contains("soldier")||commands[i].contains("pocket")) {fours[1]=true;classSelect+="Soldier ";}
-	        				if(commands[i].contains("demo")||commands[i].contains("demoman")) {fours[2]=true;classSelect+="Demoman ";}
-	        				if(commands[i].contains("med")||commands[i].contains("medic")) {fours[3]=true;classSelect+="Medic ";}
+        					boolean any = false;
+        					if(commands[i].contains("scout")) {any= true;fours[0]=true;classSelect+="Scout ";}
+	        				if(commands[i].contains("soldier")||commands[i].contains("pocket")) {any= true;fours[1]=true;classSelect+="Soldier ";}
+	        				if(commands[i].contains("demo")||commands[i].contains("demoman")) {any= true;fours[2]=true;classSelect+="Demoman ";}
+	        				if(commands[i].contains("med")||commands[i].contains("medic")) {any= true;fours[3]=true;classSelect+="Medic ";}
+	        				if(!any) {break done;}
         				}
         				player.setFoursClassPrefs(fours);
         				classSelect+="\n";
@@ -149,18 +163,22 @@ public class PrivateMessageManager extends ListenerAdapter {
         				}
         				else
         				{
-        					if(commands[i].contains("scout")) {sixes[0]=true;classSelect+="Scout ";}
-	        				if(commands[i].contains("pocket")) {sixes[1]=true;classSelect+="Pocket ";}
-	        				if(commands[i].contains("roamer")) {sixes[2]=true;classSelect+="Roamer ";}
-	        				if(commands[i].contains("demo")||commands[i].contains("demoman")) {sixes[3]=true;classSelect+="Demoman ";}
-	        				if(commands[i].contains("med")||commands[i].contains("medic")) {sixes[4]=true;classSelect+="Medic ";}
+        					boolean any= false;
+        					if(commands[i].contains("scout")) {any= true;sixes[0]=true;classSelect+="Scout ";}
+	        				if(commands[i].contains("pocket")) {any= true;sixes[1]=true;classSelect+="Pocket ";}
+	        				if(commands[i].contains("roamer")) {any= true;sixes[2]=true;classSelect+="Roamer ";}
+	        				if(commands[i].contains("demo")||commands[i].contains("demoman")) {any= true;sixes[3]=true;classSelect+="Demoman ";}
+	        				if(commands[i].contains("med")||commands[i].contains("medic")) {any= true;sixes[4]=true;classSelect+="Medic ";}
+	        				if(!any) {break done;}
         				}
         				player.setSixesClassPrefs(sixes);
+        				
         				classSelect+="\n";
         			}
         			else {sendDM(author,"Game format misspelling or currently unsupported format detected");break done;}
-        		}
-        		sendDM(author,"Current Classes Selected: \n"+classSelect);
+        			this.playerDB.updateDatabase(player);
+    			}
+    			sendDM(author,"Current Classes Selected: \n"+classSelect);
         	}
         }
     }

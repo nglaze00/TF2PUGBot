@@ -13,27 +13,28 @@ public class Player {
 	
 	
 	
-	
+	private String discordID;
 	private String steamID64;
-	private float elo;
+	private double elo;
 	private int wins;
 	private int losses;
 	private boolean[] ultiClassPrefs;
 	private boolean[] foursClassPrefs;
 	private boolean[] sixesClassPrefs;
 	
-	public Player(String steamID64, float elo, int wins, int losses) {
+	public Player(String steamID64, String discordID, double elo, int wins, int losses) {
 		ultiClassPrefs = new boolean[] {false, false};
 		foursClassPrefs = new boolean[] {false, false, false, false};
 		sixesClassPrefs = new boolean[] {false, false, false, false, false};
 		this.steamID64 = steamID64;
+		this.discordID = discordID;
 		this.elo = elo;
 		this.wins = wins;
 		this.losses = losses;
 	}
 	
-	public Player(String steamID64, float elo, int wins, int losses, String prefs_ulti, String prefs_fours, String prefs_sizes) {
-		this(steamID64, elo, wins, losses);
+	public Player(String steamID64, String discordID, double elo, int wins, int losses, String prefs_ulti, String prefs_fours, String prefs_sizes) {
+		this(steamID64, discordID, elo, wins, losses);
 		
 		this.ultiClassPrefs = stringToBooleanArray(prefs_ulti);
 		this.foursClassPrefs = stringToBooleanArray(prefs_fours);
@@ -41,11 +42,12 @@ public class Player {
 	}
 	
 	
-	public String getID() {return steamID64;}
-	public float getElo() {return elo;} 
+	public String getSteamID() {return steamID64;}
+	public String getDiscordID() {return discordID;}
+	public double getElo() {return elo;} 
 	public int getWins() {return wins;}
 	public int getLosses() {return losses;}
-	public boolean[] getUltiduoClasses() {return ultiClassPrefs;}
+
 	public String getUltiduoClassesAsString() 
 	{
 		String res = "";
@@ -85,13 +87,31 @@ public class Player {
 		}
 		return res;
 	}
-	
+	public String getPreferences() 
+	{
+		String preferences = "";
+		preferences+="Ultiduo - ";
+		if(ultiClassPrefs[0]==true) {preferences+="Soldier ";}
+		if(ultiClassPrefs[1]==true) {preferences+="Med";}
+		preferences+="\n4s - ";
+		if(foursClassPrefs[0]==true) {preferences+="Scout ";}
+		if(foursClassPrefs[1]==true) {preferences+="Soldier ";}
+		if(foursClassPrefs[2]==true) {preferences+="Demo ";}
+		if(foursClassPrefs[3]==true) {preferences+="Med";}
+		preferences+="\n6s - ";
+		if(sixesClassPrefs[0]==true) {preferences+="Scout ";}
+		if(sixesClassPrefs[1]==true) {preferences+="Pocket ";}
+		if(sixesClassPrefs[2]==true) {preferences+="Roamer ";}
+		if(sixesClassPrefs[3]==true) {preferences+="Demo ";}
+		if(sixesClassPrefs[4]==true) {preferences+="Med";}
+		return preferences;
+	}
 	public String queryValues() { 
-		return "VALUES('" + getID() + "', " + getElo() + ", " + getWins() + ", " + getLosses() + ", '" + getUltiduoClassesAsString() + "', '" 
+		return "VALUES('" + getSteamID() + "', '" + getDiscordID() + "', " + getElo() + ", " + getWins() + ", " + getLosses() + ", '" + getUltiduoClassesAsString() + "', '" 
 				+ getFoursClassesAsString() + "', '" + getSixesClassesAsString() + "')";
 	}
 	
-	public void setElo(float newElo) {elo=newElo;}
+	public void setElo(double newElo) {elo=newElo;}
 	public void setUltiduoClassPrefs(boolean[] ultiduo) {ultiClassPrefs=ultiduo;}
 	public void setFoursClassPrefs(boolean[] fours) {foursClassPrefs=fours;}
 	public void setSixesClassPrefs(boolean[] sixes) {sixesClassPrefs=sixes;}
