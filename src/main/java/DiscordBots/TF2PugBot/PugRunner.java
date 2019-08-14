@@ -8,6 +8,7 @@ import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.managers.GuildController;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ public class PugRunner
     static String foursCfg = null; // Not on server
 	
 	static Guild server;
+	static GuildController controller;
 	static VoiceChannel ultiQueue;
     static VoiceChannel foursQueue;
     static VoiceChannel sixesQueue;
@@ -54,7 +56,7 @@ public static void main(String[] args)
     {
     	PugRunner bot = new PugRunner();
         
-        tf2Server1 = new TF2Server(tf2PugServerIP, tf2PugServerPort, tf2PugServerRCONPassword);
+        //tf2Server1 = new TF2Server(tf2PugServerIP, tf2PugServerPort, tf2PugServerRCONPassword);
         
 
         try
@@ -69,8 +71,6 @@ public static void main(String[] args)
             
             System.out.println("Finished Building JDA / Discord server connection!");
             
-            System.out.println("Testing server configuration...");
-            tf2Server1.configurePUG("etf2l", "ultiduo_baloo");
         }
         catch (LoginException e)
         {
@@ -87,6 +87,7 @@ public static void main(String[] args)
     	ultiQueue = server.getVoiceChannelsByName("Ultiduo Queue",true).get(0);
     	foursQueue = server.getVoiceChannelsByName("4s Queue",true).get(0);
     	sixesQueue = server.getVoiceChannelsByName("6s Queue",true).get(0);
+    	controller = new GuildController(server);
     }
     
     public static boolean isQueueFull(Format f) 
@@ -105,7 +106,7 @@ public static void main(String[] args)
 		List<VoiceChannel> channel = server.getVoiceChannelsByName(f+" BLU",true);
 		int gameNum = channel.size()+1;
 		createVoiceChannel(f+" BLU "+gameNum);createVoiceChannel(f+" RED "+gameNum);
-
+		System.out.println("Starting up a GAUSSIAN "+f+" pug");
 		//Create Game Instance
 		Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		long startTime = calendar.getTimeInMillis() / 1000L;
@@ -121,23 +122,36 @@ public static void main(String[] args)
 			queuePlayers.add(player);
 		}
 		Player[][] teams = game.sortIntoTeams(queuePlayers);
-				
+		System.out.println(teams[0][0].getSteamID());
+		System.out.println(teams[0][1].getSteamID());
+		System.out.println(teams[1][0].getSteamID());
+		System.out.println(teams[1][1].getSteamID());
+		//Player[][] teams = {{queuePlayers.get(0), queuePlayers.get(1)}, {queuePlayers.get(2), queuePlayers.get(3)}};
+
 		//Add Players to VCs
+		VoiceChannel bluVoiceChannel = server.getVoiceChannelsByName(f+" BLU "+gameNum, true).get(0);
+		VoiceChannel redVoiceChannel = server.getVoiceChannelsByName(f+" RED "+gameNum, true).get(0);
 		for(Player p : teams[0])//BLU
-		{addUserToVoiceChannel(server.getVoiceChannelsByName(f+" BLU "+gameNum,true).get(0),p.getMember());}
+		{
+			Member m = p.getMember();
+			addUserToVoiceChannel(bluVoiceChannel, m);
+		}
 		for(Player p : teams[1])//RED
-		{addUserToVoiceChannel(server.getVoiceChannelsByName(f+" RED "+gameNum,true).get(0),p.getMember());}
+		{
+			Member m = p.getMember();
+			addUserToVoiceChannel(redVoiceChannel, m);
+		}
 
 		
-		// Configure TF2 server
+		// Configure TF2 server TODO uncomment
 		if(type==Format.ULTIDUO) {
-			tf2Server1.configurePUG(ultiCfg, "ultiduo_baloo");
+			//tf2Server1.configurePUG(ultiCfg, "ultiduo_baloo");
 		}
     	else if(type==Format.FOURS) {
-    		tf2Server1.configurePUG(foursCfg, "koth_product_rcx");
+    		//tf2Server1.configurePUG(foursCfg, "koth_product_rcx");
     	}
     	else if(type==Format.SIXES) {
-    		tf2Server1.configurePUG(sixesCfg, "cp_process_final");
+    		//tf2Server1.configurePUG(sixesCfg, "cp_process_final");
     	}
 		
 		// DM each player connect info
@@ -153,8 +167,9 @@ public static void main(String[] args)
 			}
 			for (int j = 0; j < teamSize; j++) {
 				Player player = teams[i][j];
-				PrivateMessageManager.sendDM(jda.getUserById(player.getDiscordID()), tf2Server1.getConnectInfo() 
-						+ "\nteam: " + assignedTeam + " class: " + Game.getClassName(type, player.getAssignedClass()));
+				//PrivateMessageManager.sendDM(jda.getUserById(player.getDiscordID()), tf2Server1.getConnectInfo() 
+					//	+ "\nteam: " + assignedTeam + " class: " + Game.getClassName(type, player.getAssignedClass()));
+			// TODO fix
 			}
 		}
 	}
@@ -165,26 +180,31 @@ public static void main(String[] args)
     	g.updatePlayerElos();
     	playerDB.updateDatabase(g.getRedTeam());
     	playerDB.updateDatabase(g.getBluTeam());
-    	kickUsersFromVoiceChannel(,g.getType())
+    	//kickUsersFromVoiceChannel(null,g.getFormat());//FIXME: Know what voice channel corresponds to the game
     }
     private void createVoiceChannel(String name) {
     	Channel channel = server.getController().createVoiceChannel(name).complete();
     	//Lock Channel
     }
-    private void addUserToVoiceChannel(VoiceChannel c, Member m) {server.getController().moveVoiceMember(m,c);}
-    private void kickUsersFromVoiceChannel(VoiceChannel c, Format type) 
+    private void addUserToVoiceChannel(VoiceChannel c, Member m) 
     {
-    	String f = "";
-    	if(type==Format.ULTIDUO) {f="Ultiduo";}
-    	else if(type==Format.FOURS) {f="4s";}
-    	else if(type==Format.SIXES) {f="6s";}
-    	for(Member m : c.getMembers()){server.getController().moveVoiceMember(m,server.getVoiceChannelsByName(f+" Queue",true).get(0));}
+    	controller.moveVoiceMember(m,c).queue();
     }
+    private void kickUsersFromVoiceChannel(VoiceChannel c) 
+    {
+    	//FIXME: Change general to whatever the server general is
+    	for(Member m : c.getMembers()){server.getController().moveVoiceMember(m, server.getVoiceChannelsByName("General",true).get(0)).queue();}
+    }
+    public static Member test;
+    // TODO THIS DESONT WORK WITH MOVING CHANNELS, only with adding from no channel
     public class VoiceChannelListener extends ListenerAdapter{
     	@Override
-        public void onGuildVoiceJoin(GuildVoiceJoinEvent join) {
-        	String f = join.getChannelJoined().getName();
-        	System.out.println(f);
+        public void onGuildVoiceJoin(GuildVoiceJoinEvent event) {
+    		Member discordMember = event.getMember();
+    		Player player = playerDB.getPlayersByDiscordID().get(discordMember.getUser().getId());
+    		player.setMember(discordMember);
+    		System.out.println(player.getMember());
+        	String f = event.getChannelJoined().getName();
         	Format type = null;
         	if(f.equals("Ultiduo Queue")) {type=Format.ULTIDUO;}
         	else if(f.equals("4s Queue")) {type=Format.FOURS;}

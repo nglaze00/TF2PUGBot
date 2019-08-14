@@ -123,7 +123,7 @@ public class Game {
 		// Sixes: Scout, Roamer, Pocket, Demo, Medic
 		ArrayList<Player> unsortedPlayers = new ArrayList<>(queuePlayers);
 		int[] playersPerClass = playersPerClass(format);
-		
+
 		// Partition players by class preference
 		ArrayList<ArrayList<Player>> playersPreferringClass = new ArrayList<>();
 		for(int i = 0; i < playersPerClass.length; i++) playersPreferringClass.add(new ArrayList<Player>());
@@ -148,7 +148,7 @@ public class Game {
 		int leastPreferredCount;
 		int leastPreferredClass;
 		ArrayList<Integer> classesSorted = new ArrayList<Integer>();
-		int remainingSlots[][] = {Arrays.copyOf(playersPerClass, playersPerClass.length), 
+		int remainingClassSlots[][] = {Arrays.copyOf(playersPerClass, playersPerClass.length), 
 				  				  Arrays.copyOf(playersPerClass, playersPerClass.length)}; // blu, red
 		
 		
@@ -166,6 +166,20 @@ public class Game {
 			// Sort players preferring this class onto teams
 			ArrayList<Player> playersToSortToClass = playersPreferringClass.get(leastPreferredClass);
 			while (playersToSortToClass.size() > 0) {
+				double bluEloAvg;
+				double redEloAvg;
+				if (bluPlayers == 0) {
+					bluEloAvg = 0;
+				}
+				else {
+					bluEloAvg = bluElo / bluPlayers;
+				}
+				if (redPlayers == 0) {
+					redEloAvg = 0;
+				}
+				else {
+					redEloAvg = redElo / redPlayers;
+				}
 				// Find player with highest elo
 				double maxElo = 0;
 				int maxEloIdx = -1;
@@ -179,13 +193,34 @@ public class Game {
 				Player playerToSort = playersToSortToClass.get(maxEloIdx);
 				playerToSort.setAssignedClass(leastPreferredClass);
 				// Put them on team with less elo
-				if ((bluElo == 0 && redElo == 0) || bluElo / bluPlayers < redElo / redPlayers &&  remainingSlots[0][leastPreferredClass] > 0) {
-					teams[0][getIndexForClass(format, leastPreferredClass, remainingSlots[0][leastPreferredClass])] = playerToSort;
+				if (remainingClassSlots[0][leastPreferredClass] == 0) {
+					//No spots on blu --> put on red
+					remainingClassSlots[1][leastPreferredClass] -= 1;
+					teams[1][getIndexForClass(format, leastPreferredClass, remainingClassSlots[0][leastPreferredClass])] = playerToSort;
+					redElo += playerToSort.getElo();
+					redPlayers += 1;
+				}
+				else if (remainingClassSlots[1][leastPreferredClass] == 0) {
+					// No spots on red --> put on blu
+					remainingClassSlots[0][leastPreferredClass] -= 1;
+					teams[0][getIndexForClass(format, leastPreferredClass, remainingClassSlots[0][leastPreferredClass])] = playerToSort;
 					bluElo += playerToSort.getElo();
+					bluPlayers += 1;
 				}
 				else {
-					teams[1][getIndexForClass(format, leastPreferredClass, remainingSlots[0][leastPreferredClass])] = playerToSort;
-					redElo += playerToSort.getElo();
+					// Put on team with lower elo
+					if (bluEloAvg < redEloAvg) {
+						remainingClassSlots[0][leastPreferredClass] -= 1;
+						teams[0][getIndexForClass(format, leastPreferredClass, remainingClassSlots[0][leastPreferredClass])] = playerToSort;
+						bluElo += playerToSort.getElo();
+						bluPlayers += 1;
+					}
+					else {
+						remainingClassSlots[1][leastPreferredClass] -= 1;
+						teams[1][getIndexForClass(format, leastPreferredClass, remainingClassSlots[0][leastPreferredClass])] = playerToSort;
+						redElo += playerToSort.getElo();
+						redPlayers += 1;
+					}
 				}
 				
 				playersToSortToClass.remove(playerToSort);
@@ -195,44 +230,6 @@ public class Game {
 			classesSorted.add(leastPreferredClass);			
 		}
 		
-		// Sort remaining players
-		while(unsortedPlayers.size() > 0) {
-			double maxElo = 0;
-			Player maxEloPlayer = null;
-			// Get remaining player with highest elo
-			for (Player player : unsortedPlayers) {
-				if (player.getElo() > maxElo) {
-					maxElo = player.getElo();
-					maxEloPlayer = player;
-				}
-			}
-			
-			// Put on team with lower elo
-			
-			if ((bluElo == 0 && redElo == 0) || bluElo / bluPlayers < redElo / redPlayers && (Arrays.asList(remainingSlots[0]).contains(1) || Arrays.asList(remainingSlots[0]).contains(2))) {
-				for (int i = 0; i < remainingSlots[0].length; i++) {
-					if (remainingSlots[0][i] > 0) {
-						teams[0][getIndexForClass(format, i, remainingSlots[0][i])] = maxEloPlayer;
-						remainingSlots[0][i] -= 1;
-						maxEloPlayer.setAssignedClass(i);
-						break;
-					}
-				}
-				bluElo += maxElo;
-			}
-			else {
-				for (int i = 0; i < remainingSlots[1].length; i++) {
-					if (remainingSlots[1][i] > 0) {
-						teams[1][getIndexForClass(format, i, remainingSlots[1][i])] = maxEloPlayer;
-						remainingSlots[1][i] -= 1;
-						maxEloPlayer.setAssignedClass(i);
-					}
-				}
-				redElo += maxElo;
-			}
-			
-			unsortedPlayers.remove(maxEloPlayer);
-		}
 		return teams;
 	}
 	
@@ -307,5 +304,11 @@ public class Game {
 			}
 		}
 		return -1;
+	}
+	public String getFormat() {
+		if(format==Format.ULTIDUO) {return "Ultiduo";}
+		else if(format==Format.FOURS) {return "4s";}
+		else if(format==Format.SIXES) {return "6s";}
+		else {return "Unknown Format";}
 	}
 }

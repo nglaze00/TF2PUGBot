@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.Arrays;
 
 import DiscordBots.TF2PugBot.PugRunner.Format;
+import net.dv8tion.jda.core.entities.Member;
 
 /**
  * Hello world!
@@ -24,11 +25,12 @@ public class Player {
 	private boolean[] foursClassPrefs;
 	private boolean[] sixesClassPrefs;
 	private int assignedClass; // See Game.getClassName() for values
+	private Member member;
 	
 	public Player(String steamID64, String discordID, double elo, int wins, int losses) {
-		ultiClassPrefs = new boolean[] {false, false};
-		foursClassPrefs = new boolean[] {false, false, false, false};
-		sixesClassPrefs = new boolean[] {false, false, false, false, false};
+		ultiClassPrefs = new boolean[] {true, true};
+		foursClassPrefs = new boolean[] {true, true, true, true};
+		sixesClassPrefs = new boolean[] {true, true, true, true, true};
 		this.steamID64 = steamID64;
 		this.discordID = discordID;
 		this.elo = elo;
@@ -51,6 +53,9 @@ public class Player {
 	public int getWins() {return wins;}
 	public int getLosses() {return losses;}
 	public int getAssignedClass() {return assignedClass;}
+	public Member getMember() {
+		return member;
+	}
 
 	public String getClassPrefsAsString(Format format) 
 	{
@@ -152,6 +157,11 @@ public class Player {
         	System.out.println(e.toString() + " Invalid URL");
         	return "error";
         } 
+	}
+
+	public void setMember(Member discordMember) {
+		member = discordMember;
+		
 	}
 
 	
