@@ -33,7 +33,7 @@ public class LogParser {
 					{
 						String temp = line.split("\"date\": ")[1];
 						matchEndTime = Long.parseLong(temp.substring(0,temp.indexOf(",")));
-						if(matchEndTime < matchStartTime) {return -1;}
+						if(matchEndTime <= matchStartTime) {return -1;}
 					}
 					if(ID!=-1 && matchEndTime!=-1) {return ID;} 
 				}

@@ -7,12 +7,18 @@ import com.ibasco.agql.protocols.valve.source.query.SourceRconAuthStatus;
 import com.ibasco.agql.protocols.valve.source.query.client.SourceRconClient;
 import com.ibasco.agql.protocols.valve.source.query.exceptions.RconNotYetAuthException;
 
+import DiscordBots.TF2PugBot.PugRunner.Format;
+
 public class TF2Server {
 
 	private InetSocketAddress address;
 	private String rconPassword;
 	private SourceRconClient rconClient;
 	private String password;
+	
+	private String[] ultiMaps = {"ultiduo_baloo"};
+	private String[] foursMaps = {"koth_product_rcx"};
+	private String[] sixesMaps = {"cp_process_final"};
 	
 	private boolean authenticated;
 	public boolean isInUse;
@@ -33,13 +39,22 @@ public class TF2Server {
 		else {
 			authenticated = true;
 			System.out.println("RCON authentication to TF2 server at " + tf2PugServerIP + " with RCON password " + rconPassword + " successful!");
-			}
+		}
 	}
 	public String getConnectInfo() {return "connect " + address.toString() + "; password " + password;}
 	public String getPassword() {return password;}
 	
-	public void configurePUG(String cfgFileName, String mapName) {
-		// Change map //TODO choose random; for now we use badlands
+	public void configurePUG(String cfgFileName, Format f) {
+		String mapName="";
+		Random r = new Random();
+		if(f==Format.ULTIDUO) {mapName = ultiMaps[r.nextInt(ultiMaps.length-1)];}
+		if(f==Format.FOURS) {mapName = foursMaps[r.nextInt(foursMaps.length-1)];}
+		if(f==Format.SIXES) {mapName = sixesMaps[r.nextInt(sixesMaps.length-1)];}
+		configurePUG(cfgFileName,mapName);
+	}
+	public void configurePUG(String cfgFileName, String mapName) 
+	{
+		// Change map
 		String mapCommand = "changelevel " + mapName;
 		System.out.println("Changing server map...");
 		executeRCONCommand(mapCommand);
@@ -67,7 +82,6 @@ public class TF2Server {
 		// executeRCONCommand("mp_winlimit 5");
 		isInUse = true;
 	}
-	
 	
 	public boolean executeRCONCommand(String command) {
 		if (!authenticated) {

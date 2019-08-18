@@ -19,23 +19,15 @@ public class Game {
 	private long startTime;
 	private Format format;
 	private int teamSize;
+	private int ID;
 	
 	public Game(long sTime, Format format){
 		startTime=sTime;
 		this.format = format;
 		switch (format) {
-			case ULTIDUO: {
-				teamSize = 2;
-				break;
-			}
-			case FOURS: {
-				teamSize = 4;
-				break;
-			}
-			case SIXES: {
-				teamSize = 6;
-				break;
-			}
+			case ULTIDUO: 	{teamSize = 2; break;}
+			case FOURS: 	{teamSize = 4; break;}
+			case SIXES: 	{teamSize = 6; break;}
 		}
 	}
 	public void addPlayer(Player p, boolean isRed) 
@@ -71,6 +63,7 @@ public class Game {
 		
 		double redScore = 0;
 		double bluScore = 0;
+		
 		if (this.winner == Winner.RED) {
 			redScore = 1;
 			bluScore = 0;
@@ -88,20 +81,25 @@ public class Game {
 		double redEloChange = kFactor * (redScore - redExpected);
 		double bluEloChange = kFactor * (redScore - redExpected);
 		
-		for (Player player : redPlayers) {
-			player.setElo(player.getElo() + redEloChange);
-		}
-		for (Player player : bluPlayers) {
-			player.setElo(player.getElo() + bluEloChange);
-		}
-		
-
+		for (Player player : redPlayers) {player.setElo(player.getElo() + redEloChange);}
+		for (Player player : bluPlayers) {player.setElo(player.getElo() + bluEloChange);}
 	}
 	
 	public long getStartTime() {return startTime;}
-	public ArrayList<Player> getBluTeam() {return bluPlayers;}
-	public ArrayList<Player> getRedTeam() {return redPlayers;}
-	
+	public Player[] getBluTeam() 
+	{
+		Player[] blu = new Player[bluPlayers.size()];
+		blu = bluPlayers.toArray(blu);
+		return blu;
+	}
+	public Player[] getRedTeam() 
+	{
+		Player[] red = new Player[redPlayers.size()];
+		red = redPlayers.toArray(red);
+		return red;
+	}
+	public int getID() {return ID;}
+	public void setID(int gn) {ID = gn;}
 	public void setWinner(String victor) 
 	{
 		switch (victor.toLowerCase()) 

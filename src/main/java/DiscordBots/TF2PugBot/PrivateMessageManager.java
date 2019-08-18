@@ -21,7 +21,6 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.requests.restaction.MessageAction;
 
 //TODO !profile https://steamcommunity.com/id/iwyy/ doesn't work because of last slash
-//TODO "!classes" should show current prefs; "!profile" should show current steam profile (in URL format)
 //TODO sending someone else's profile when you(Discord) is already in the database shouldn't be allowed
 
 
