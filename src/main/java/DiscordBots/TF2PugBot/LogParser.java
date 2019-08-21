@@ -9,17 +9,18 @@ import java.util.ArrayList;
 
 
 public class LogParser {
-	public static final String[] uploaders = {"U:1:351789566"}; //The uploader IDs of all servers used by the pugbot
+	public static final String[] uploaders = {"U:1:351789566", "U:1:231702"}; //The uploader IDs of all servers used by the pugbot
 	public static int matchEndID(Game g)
 	{
 		long matchStartTime = g.getStartTime();
 		long matchEndTime = -1;
-		String player = g.getRedTeam()[0].getDiscordID();
+		
+		String arbitraryPlayerSteamID = g.getBluTeam()[0].getSteamID();
 		for(String upload : uploaders)
 		{
 			try 
 			{
-				URL logsAPI = new URL("http://logs.tf/api/v1/log?uploader="+upload+"&player="+player+"&limit=1");
+				URL logsAPI = new URL("http://logs.tf/api/v1/log?uploader="+upload+"&player="+arbitraryPlayerSteamID+"&limit=1");
 				BufferedReader in = new BufferedReader(new InputStreamReader(logsAPI.openStream()));
 				String line;
 				int ID = -1;

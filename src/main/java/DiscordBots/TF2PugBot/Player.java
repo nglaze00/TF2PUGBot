@@ -31,6 +31,7 @@ public class Player {
 		ultiClassPrefs = new boolean[] {true, true};
 		foursClassPrefs = new boolean[] {true, true, true, true};
 		sixesClassPrefs = new boolean[] {true, true, true, true, true};
+		assignedClass = -1;
 		this.steamID64 = steamID64;
 		this.discordID = discordID;
 		this.elo = elo;

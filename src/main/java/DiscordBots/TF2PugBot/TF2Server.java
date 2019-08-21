@@ -41,15 +41,15 @@ public class TF2Server {
 			System.out.println("RCON authentication to TF2 server at " + tf2PugServerIP + " with RCON password " + rconPassword + " successful!");
 		}
 	}
-	public String getConnectInfo() {return "connect " + address.toString() + "; password " + password;}
+	public String getConnectInfo() {return "connect " + address.toString().split("/")[0] + ":" + address.toString().split(":")[1]+"; password " + password;}
 	public String getPassword() {return password;}
 	
 	public void configurePUG(String cfgFileName, Format f) {
 		String mapName="";
 		Random r = new Random();
-		if(f==Format.ULTIDUO) {mapName = ultiMaps[r.nextInt(ultiMaps.length-1)];}
-		if(f==Format.FOURS) {mapName = foursMaps[r.nextInt(foursMaps.length-1)];}
-		if(f==Format.SIXES) {mapName = sixesMaps[r.nextInt(sixesMaps.length-1)];}
+		if(f==Format.ULTIDUO) {mapName = ultiMaps[r.nextInt(ultiMaps.length)];}
+		if(f==Format.FOURS) {mapName = foursMaps[r.nextInt(foursMaps.length)];}
+		if(f==Format.SIXES) {mapName = sixesMaps[r.nextInt(sixesMaps.length)];}
 		configurePUG(cfgFileName,mapName);
 	}
 	public void configurePUG(String cfgFileName, String mapName) 

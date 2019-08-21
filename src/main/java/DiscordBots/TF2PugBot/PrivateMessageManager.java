@@ -35,6 +35,7 @@ public class PrivateMessageManager extends ListenerAdapter {
 		/**
 		 * Sends a direct message to the given user
 		 */
+		System.out.println("Sending DM to " + recipient.getId().toString() + ": " + msg);
 		recipient.openPrivateChannel().queue((channel) ->
         {
             channel.sendMessage(msg).queue();
