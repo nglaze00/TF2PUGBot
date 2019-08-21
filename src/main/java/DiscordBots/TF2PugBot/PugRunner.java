@@ -36,21 +36,12 @@ import net.dv8tion.jda.core.JDA;
 // TODO use lowest elo --> higher elo team, instead of the opposite
 public class PugRunner
 {
-	static String token = "NjA5MjA2MDU1MDk1ODk0MDIx.XVJOrw.5RYC5CJVrUWslwDhP6791Y8ARLA";
+	static String token = "token_goes_here";
     //TEST SERVER
 	//static String discordPugServerId = "609217958950207508"; // Do event.getGuild().getId() to get server ID; update for gausspugs
     //GAUSSPUGS
-	static String discordPugServerId = "608443004776349721";
+	static String discordPugServerId = "server_id_here";
 	
-    // wild's server
-    /**
-    static String tf2PugServerIP = "192.223.26.144"; //FIXME: Store in TF2Server.java
-    static int tf2PugServerPort = 27015; //FIXME: Store in TF2Server.java
-    static String tf2PugServerRCONPassword = ""; //FIXME: Store in TF2Server.java
-    static String sixesCfg = "ugc_6v_standard"; //FIXME: Store in TF2Server.java
-    static String ultiCfg = "etf2l_ultiduo"; //FIXME: Store in TF2Server.java
-    static String foursCfg = null; // Not on server //FIXME: Store in TF2Server.java
-    **/
     // serveme
     static String tf2PugServerIP = "dorothy.serveme.tf"; //FIXME: Store in TF2Server.java
     static int tf2PugServerPort = 27025; //FIXME: Store in TF2Server.java
