@@ -20,6 +20,8 @@ public class Game {
 	private Format format;
 	private int teamSize;
 	private int ID;
+	private int redElo;
+	private int bluElo;
 	
 	public Game(long sTime, Format format){
 		bluPlayers = new ArrayList<Player>();
@@ -31,11 +33,6 @@ public class Game {
 			case FOURS: 	{teamSize = 4; break;}
 			case SIXES: 	{teamSize = 6; break;}
 		}
-	}
-	public void addPlayer(Player p, boolean isRed) 
-	{
-		if(isRed) 	{ redPlayers.add(p); }
-		else 		{ bluPlayers.add(p); }
 	}
 	
 	public float computeTeamElo(ArrayList<Player> teamPlayers) {
@@ -54,11 +51,9 @@ public class Game {
 			System.out.println("Match isn't over yet. updateElos() was called in error.");
 			return;
 		}
-		double redElo = computeTeamElo(this.redPlayers);
-		double bluElo = computeTeamElo(this.bluPlayers);
 		
-		double redTransformed = Math.pow(10, redElo / 400);
-		double bluTransformed = Math.pow(10, redElo / 400);
+		double redTransformed = Math.pow(10, this.redElo / 400);
+		double bluTransformed = Math.pow(10, this.redElo / 400);
 		
 		double redExpected = redTransformed / (redTransformed + bluTransformed);
 		double bluExpected = bluTransformed / (redTransformed + bluTransformed);
@@ -164,19 +159,19 @@ public class Game {
 		
 		
 		Player[][] teams = new Player[2][teamSize]; // blu, red
-		double bluElo = 0;
-		double redElo = 0;
 		
-		int bluPlayers = 0;
-		int redPlayers = 0;
+		int bluPlayerCount = 0;
+		int redPlayerCount = 0;
 		
-		int leastPreferredCount;
-		int leastPreferredUnsortedClass;
+		
+		
 		ArrayList<Integer> classesSorted = new ArrayList<Integer>();
 		int remainingClassSlots[][] = {Arrays.copyOf(playersPerClass, playersPerClass.length), 
 				  				  Arrays.copyOf(playersPerClass, playersPerClass.length)}; // blu, red
 		
 		
+		int leastPreferredCount;
+		int leastPreferredUnsortedClass;
 		for (int classIdx = 0; classIdx < playersPreferringClass.size(); classIdx++) {
 			// Find remaining class with least number of players preferring
 			leastPreferredCount = 13;
@@ -195,67 +190,63 @@ public class Game {
 					playersToSortToClass.add(player);
 				}
 			}
+			
 			// FIXME
 			while (playersToSortToClass.size() > 0) {
+				
 				double bluEloAvg;
 				double redEloAvg;
-				if (bluPlayers == 0) {
+				if (bluPlayerCount == 0) {
 					bluEloAvg = 0;
 				}
 				else {
-					bluEloAvg = bluElo / bluPlayers;
+					bluEloAvg = bluElo / bluPlayerCount;
 				}
-				if (redPlayers == 0) {
+				if (redPlayerCount == 0) {
 					redEloAvg = 0;
 				}
 				else {
-					redEloAvg = redElo / redPlayers;
+					redEloAvg = redElo / redPlayerCount;
 				}
 				
 				Player playerToSort = getPlayerWithHighestElo(playersToSortToClass);
-				System.out.println(leastPreferredUnsortedClass);
+				
+				playersToSortToClass.remove(playerToSort);
+				unsortedPlayers.remove(playerToSort);
+				
 				playerToSort.setAssignedClass(leastPreferredUnsortedClass);
 				// Put them on team with less elo
 				if (remainingClassSlots[0][leastPreferredUnsortedClass] == 0 && remainingClassSlots[1][leastPreferredUnsortedClass] != 0) {
-					//No spots on blu, but spots on red --> put on red
+					//No spots of this class left on blu, but spots on red --> put on red
 					remainingClassSlots[1][leastPreferredUnsortedClass] -= 1;
 					teams[1][getIndexForClass(format, leastPreferredUnsortedClass, remainingClassSlots[0][leastPreferredUnsortedClass])] = playerToSort;
 					redElo += playerToSort.getElo();
-					redPlayers += 1;
-					addPlayer(playerToSort, true);
 				}
 				else if (remainingClassSlots[1][leastPreferredUnsortedClass] == 0 && remainingClassSlots[0][leastPreferredUnsortedClass] != 0) {
 					// No spots on red, but spots on blu --> put on blu
 					remainingClassSlots[0][leastPreferredUnsortedClass] -= 1;
 					teams[0][getIndexForClass(format, leastPreferredUnsortedClass, remainingClassSlots[0][leastPreferredUnsortedClass])] = playerToSort;
 					bluElo += playerToSort.getElo();
-					bluPlayers += 1;
-					addPlayer(playerToSort, false);
 				}
 				else if (remainingClassSlots[0][leastPreferredUnsortedClass] == 0 && remainingClassSlots[1][leastPreferredUnsortedClass] == 0) {
 					// No spots left on this class. Remaining players preferring it don't get to play it haha sucks
 					break;
 				}
-				else {
+				else {	// Spots on both 
 					// Put on team with lower elo
 					if (bluEloAvg < redEloAvg) {
 						remainingClassSlots[0][leastPreferredUnsortedClass] -= 1;
 						teams[0][getIndexForClass(format, leastPreferredUnsortedClass, remainingClassSlots[0][leastPreferredUnsortedClass])] = playerToSort;
 						bluElo += playerToSort.getElo();
-						bluPlayers += 1;
-						addPlayer(playerToSort, false);
 					}
 					else {
 						remainingClassSlots[1][leastPreferredUnsortedClass] -= 1;
 						teams[1][getIndexForClass(format, leastPreferredUnsortedClass, remainingClassSlots[0][leastPreferredUnsortedClass])] = playerToSort;
 						redElo += playerToSort.getElo();
-						redPlayers += 1;
-						addPlayer(playerToSort, true);
 					}
 				}
 				
-				playersToSortToClass.remove(playerToSort);
-				unsortedPlayers.remove(playerToSort);
+				
 			}
 			
 			classesSorted.add(leastPreferredUnsortedClass);			
@@ -263,50 +254,61 @@ public class Game {
 		// If not enough players preferred a class, choose unselected players
 		while (unsortedPlayers.size() > 0) {
 			Player playerToSort = getPlayerWithHighestElo(unsortedPlayers);
+			unsortedPlayers.remove(playerToSort);
 			if (bluElo < redElo) {
 				boolean done = false;
-				for (int i = 0; i > teams[0].length; i++) {
+				for (int i = 0; i < teams[0].length; i++) {
 					if (done) break;
-					if (teams[1][i] == null) {
+					if (teams[0][i] == null) {
 						teams[0][i] = playerToSort;
 						bluElo += playerToSort.getElo();
+						playerToSort.setAssignedClass(getClassForIndex(format, i));
 						done = true;
 					}
 				}
 				if (!done) {
-					for (int i = 0; i > teams[1].length; i++) {
+					for (int i = 0; i < teams[1].length; i++) {
 						if (done) break;
 						if (teams[1][i] == null) {
 							teams[1][i] = playerToSort;
 							redElo += playerToSort.getElo();
+							playerToSort.setAssignedClass(getClassForIndex(format, i));
 							done = true;
 						}
 					}
 				}
 				
 			}
+			// bluElo > redElo
 			else {
+				
 				boolean done = false;
-				for (int i = 0; i > teams[1].length; i++) {
+				for (int i = 0; i < teams[1].length; i++) {
 					if (done) break;
 					if (teams[1][i] == null) {
 						teams[1][i] = playerToSort;
 						redElo += playerToSort.getElo();
+						playerToSort.setAssignedClass(getClassForIndex(format, i));
 						done = true;
 					}
 				}
 				if (!done) {
-					for (int i = 0; i > teams[0].length; i++) {
+					for (int i = 0; i < teams[0].length; i++) {
 						if (done) break;
 						if (teams[0][i] == null) {
 							teams[0][i] = playerToSort;
 							redElo += playerToSort.getElo();
+							playerToSort.setAssignedClass(getClassForIndex(format, i));
 							done = true;
 						}
 					}
 				}
 			}
 		}
+		bluElo /= this.teamSize;
+		redElo /= this.teamSize;
+		for (Player p : teams[0]) bluPlayers.add(p);
+		for (Player p : teams[1]) redPlayers.add(p);
 		return teams;
 	}
 	
@@ -354,33 +356,23 @@ public class Game {
 		}
 		return "";
 	}
-	public static int getIndexForClass(Format format, int classIdx, int remainingSlots) {
-		switch (format) {
-			case ULTIDUO: {
-				switch (classIdx) {
-					case 0: return 0;
-					case 1: return 1;
-				}
-			}
-			case FOURS: {
-				switch (classIdx) {
-					case 0: return 0;
-					case 1: return 1;
-					case 2: return 2;
-					case 3: return 3;
-				}
-			}
-			case SIXES: {
-				switch (classIdx) {
-					case 0: return 2 - remainingSlots;
-					case 1: return 2;
-					case 2: return 3;
-					case 3: return 4;
-					case 4: return 5;
-				}
-			}
+	public static int getClassForIndex(Format format, int idx) {
+		if (format == Format.SIXES) {
+			if (idx == 0) return 0;
+			else if (idx == 1) return 0;
+			else return idx - 1;
 		}
-		return -1;
+		else return idx;
+	}
+	
+	public static int getIndexForClass(Format format, int classIdx, int remainingSlots) {
+		if (format == Format.SIXES) {
+			if (classIdx == 0) {
+				return 2 - remainingSlots;
+			}
+			else return classIdx + 1;
+		}
+		else return classIdx;
 	}
 	public String getFormat() {
 		if(format==Format.ULTIDUO) {return "Ultiduo";}

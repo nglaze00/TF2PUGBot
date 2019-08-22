@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 import DiscordBots.TF2PugBot.PugRunner.Format;
 import net.dv8tion.jda.core.entities.Member;
+import net.dv8tion.jda.core.entities.User;
 
 /**
  * Hello world!
@@ -26,6 +27,7 @@ public class Player {
 	private boolean[] sixesClassPrefs;
 	private int assignedClass; // See Game.getClassName() for values
 	private Member member;
+	private User user;
 	
 	public Player(String steamID64, String discordID, double elo, int wins, int losses) {
 		ultiClassPrefs = new boolean[] {true, true};
@@ -57,6 +59,7 @@ public class Player {
 	public Member getMember() {
 		return member;
 	}
+	public User getUser() { return user;}
 
 	public String getClassPrefsAsString(Format format) 
 	{
@@ -162,7 +165,11 @@ public class Player {
 
 	public void setMember(Member discordMember) {
 		member = discordMember;
+		setUser(discordMember.getUser());
 		
+	}
+	private void setUser(User user) {
+		this.user = user;
 	}
 
 	

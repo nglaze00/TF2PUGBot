@@ -34,18 +34,21 @@ import net.dv8tion.jda.core.JDA;
 // TODO kick out boys who dont have profile DMed
 // TODO add more maps, support for multiple servers
 // TODO use lowest elo --> higher elo team, instead of the opposite
+// TODO add server isInUse
 public class PugRunner
 {
-	static String token = "token_goes_here";
-    //TEST SERVER
-	//static String discordPugServerId = "609217958950207508"; // Do event.getGuild().getId() to get server ID; update for gausspugs
-    //GAUSSPUGS
-	static String discordPugServerId = "server_id_here";
+
 	
-    // serveme
-    static String tf2PugServerIP = "dorothy.serveme.tf"; //FIXME: Store in TF2Server.java
-    static int tf2PugServerPort = 27025; //FIXME: Store in TF2Server.java
-    static String tf2PugServerRCONPassword = "gauss"; //FIXME: Store in TF2Server.java
+	// Sample sensitive info
+	static String token = "token-goes-here";
+	static String discordPugServerId = "608443004776349721"; // Do event.getGuild().getId() to get server ID
+	static String tf2PugServerIP = "ip.address.here"; //FIXME: Store in TF2Server.java
+    static int tf2PugServerPort = 11111; //FIXME: Store in TF2Server.java
+    static String tf2PugServerRCONPassword = "rconpassgoeshere"; //FIXME: Store in TF2Server.java
+    
+   
+    
+    
     static String sixesCfg = "ugc_6v_standard"; //FIXME: Store in TF2Server.java
     static String ultiCfg = "etf2l_ultiduo"; //FIXME: Store in TF2Server.java
     static String foursCfg = "ugc_4v_koth"; // Not on server //FIXME: Store in TF2Server.java
@@ -66,7 +69,6 @@ public class PugRunner
 	
 	public PugRunner() {
 		tf2Server1 = new TF2Server(tf2PugServerIP, tf2PugServerPort, tf2PugServerRCONPassword);
-		// tf2Server1.configurePUG(ultiCfg, Format.ULTIDUO); tests changing map
 		System.out.println("GAUSS");
 
         try //Setup Listeners and JDA
@@ -80,6 +82,8 @@ public class PugRunner
             setDiscordServer(jda, discordPugServerId);
             
             System.out.println("Finished Building JDA / Discord server connection!");
+            // Test team sorter
+            //startGame(Format.ULTIDUO);
             
         }
         catch (LoginException e){e.printStackTrace();}
@@ -92,13 +96,13 @@ public class PugRunner
 			if(((calendar.getTimeInMillis() / 1000L)-timestamp)>=5) //FIXME ~30s between checks
 			{
 				timestamp = calendar.getTimeInMillis() / 1000L;
-				System.out.println(currentGames.size());
-				for(Game g : currentGames) 
+
+				for(int i = 0; i < currentGames.size(); i++) 
 				{
-					System.out.println("A");
+					Game g = currentGames.get(i);
 					int ID = LogParser.matchEndID(g);
-					System.out.println(ID);
-					if(ID!=-1) {endGame(g,playerDB,ID);}
+					
+					if(ID!=-1) endGame(g,playerDB,ID);
 				}
 			}
 		}
@@ -151,7 +155,6 @@ public class PugRunner
 		long startTime = calendar.getTimeInMillis() / 1000L;
 		Game game = new Game(startTime, format);
 		game.setID(gameNum);
-		currentGames.add(game);
 		
 		
 		
@@ -163,28 +166,25 @@ public class PugRunner
 			Player player = playersByDiscordID.get(queueMember.getUser().getId());
 			queuePlayers.add(player);
 		}
+		// ArrayList<Player> queuePlayers = new ArrayList<Player>(playerDB.getPlayersBySteamID().values());
+		// queuePlayers.remove(0);
 		Player[][] teams = game.sortIntoTeams(queuePlayers);
-		//Player[][] teams = {{queuePlayers.get(0), queuePlayers.get(1)}, {queuePlayers.get(2), queuePlayers.get(3)}};
+		
 
-		//Add Players to VCs
+		//Add Players to VCs & tell them match has started
 		VoiceChannel bluVoiceChannel = server.getVoiceChannelsByName(f+" BLU "+gameNum, true).get(0);
 		VoiceChannel redVoiceChannel = server.getVoiceChannelsByName(f+" RED "+gameNum, true).get(0);
-		for(Player p : teams[0]) 
+		for(Player p : teams[0]) //BLU
 		{
-			System.out.println(p.getSteamID()); 
-			addUserToVoiceChannel(bluVoiceChannel, p.getMember());}//BLU
-		for(Player p : teams[1]) {addUserToVoiceChannel(redVoiceChannel, p.getMember());}//RED
-		
-		// Configure TF2 server TODO uncomment
-		if(format==Format.ULTIDUO) {
-			//tf2Server1.configurePUG(ultiCfg, "ultiduo_baloo");
+			addUserToVoiceChannel(bluVoiceChannel, p.getMember());
+			PrivateMessageManager.sendDM(p.getMember().getUser(),"Getting server setup... will send server info soon");
 		}
-    	else if(format==Format.FOURS) {
-    		//tf2Server1.configurePUG(foursCfg, "koth_product_rcx");
-    	}
-    	else if(format==Format.SIXES) {
-    		//tf2Server1.configurePUG(sixesCfg, "cp_process_final");
-    	}
+		for(Player p : teams[1]) //RED
+		{
+			addUserToVoiceChannel(redVoiceChannel, p.getMember());
+			PrivateMessageManager.sendDM(p.getUser(),"Getting server setup... will send server info soon");
+		}
+
 		// Configure TF2 server
 		tf2Server1.configurePUG(getCfgName(format), format);
 		// DM each player connect info
@@ -204,6 +204,7 @@ public class PugRunner
 						+ "\nteam: " + assignedTeam + " class: " + Game.getClassName(format, player.getAssignedClass()));
 			}
 		}
+		currentGames.add(game);
 	}
     private void endGame(Game g, PlayerDatabase playerDB, int ID) 
     {
@@ -245,12 +246,11 @@ public class PugRunner
     }
     private void createVoiceChannel(String name) {
     	Channel channel = server.getController().createVoiceChannel(name).complete();
-        channel.putPermissionOverride(server.getRolesByName("@everyone",true).get(0)).setDeny(Permission.VOICE_CONNECT).queue();
-        channel.putPermissionOverride(server.getRolesByName("@everyone",true).get(0)).setDeny(Permission.VOICE_SPEAK).queue();
+    	//channel.putPermissionOverride(server.getRolesByName("@everyone",true).get(0)).setDeny(Permission.)
+    	channel.putPermissionOverride(server.getRolesByName("@everyone",true).get(0)).setDeny(Permission.VOICE_SPEAK).queue();
     }
     private void addUserToVoiceChannel(VoiceChannel c, Member m) 
     {
-    	c.createPermissionOverride(m).setAllow(Permission.VOICE_CONNECT).queue();
     	c.createPermissionOverride(m).setAllow(Permission.VOICE_SPEAK).queue();
     	controller.moveVoiceMember(m,c).queue();
     }
@@ -277,12 +277,12 @@ public class PugRunner
 	    			if(isQueueFull(type)) {startGame(type);};
 	    		}
     		}
-    		catch(Exception e)
+    		catch(NullPointerException e) 
     		{
-    			e.printStackTrace();
     			server.getController().moveVoiceMember(discordMember, server.getVoiceChannelsByName("General",true).get(0)).queue();
     			PrivateMessageManager.sendDM(discordMember.getUser(), "You are not in the player database yet, please use !profile and set yourself up!");
     		}
+    		catch(Exception e){e.printStackTrace();}
     	}
     	@Override
     	public void onGuildVoiceMove(GuildVoiceMoveEvent event) {
@@ -290,8 +290,6 @@ public class PugRunner
     		try 
     		{
 	    		Player player = playerDB.getPlayersByDiscordID().get(discordMember.getUser().getId());
-	    		player.setMember(discordMember);
-	    		System.out.println(player.getMember());
 	        	String f = event.getChannelJoined().getName();
 	        	Format type = null;
 	        	if(f.equals("Ultiduo Queue")) {type=Format.ULTIDUO;}
@@ -301,12 +299,13 @@ public class PugRunner
 	    			if(isQueueFull(type)) {startGame(type);};
 	    		}
 	    	}
-			catch(Exception e)
-    		{
-				e.printStackTrace();
-				server.getController().moveVoiceMember(discordMember, server.getVoiceChannelsByName("General",true).get(0)).queue();
-				PrivateMessageManager.sendDM(discordMember.getUser(), "You are not in the player database yet, please use !profile and set yourself up!");
-			}
+    		//catch(NullPointerException e) 
+    		//{
+    		//	e.printStackTrace();
+    		//	server.getController().moveVoiceMember(discordMember, server.getVoiceChannelsByName("General",true).get(0)).queue();
+    		//	PrivateMessageManager.sendDM(discordMember.getUser(), "You are not in the player database yet, please use !profile and set yourself up!");
+    		//}
+    		catch(Exception e){e.printStackTrace();}
     	}
     }
 }

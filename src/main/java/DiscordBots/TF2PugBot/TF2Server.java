@@ -54,33 +54,36 @@ public class TF2Server {
 	}
 	public void configurePUG(String cfgFileName, String mapName) 
 	{
+		
+
 		// Change map
 		String mapCommand = "changelevel " + mapName;
 		System.out.println("Changing server map...");
 		executeRCONCommand(mapCommand);
 		
-		//Wait a bit
+		// Wait a bit for map to change
 		try {
-			Thread.sleep(10000);
+			Thread.sleep(20000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		// Exec config
-		String configCommand = "exec " + cfgFileName; //TODO get this
-		System.out.println("Executing config");
-		executeRCONCommand(configCommand);
-		
 		// Change password
-		String newPass = generatePassword();
-		String passCommand = "sv_password " + newPass; //TODO get this
-		System.out.println("Server password set to " + newPass);
-		this.password = newPass;
-		executeRCONCommand(passCommand);
-		
-		// executeRCONCommand("mp_winlimit 5");
+		this.password = generatePassword();
+		executeRCONCommand("sv_password " + this.password);
+		System.out.println("Server password set to " + this.password);
 		isInUse = true;
+		
+		String configCommand = "exec " + cfgFileName;
+		try {
+			System.out.println("Executing config");
+			executeRCONCommand(configCommand);
+		}
+		catch (Exception e) {
+			System.out.println("config exec failed");
+		}
+		
 	}
 	
 	public boolean executeRCONCommand(String command) {

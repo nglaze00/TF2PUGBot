@@ -92,6 +92,16 @@ public class PrivateMessageManager extends ListenerAdapter {
                 	}
                 }
         	}
+        	else if (msg.contains("!elo")) {
+        		Player player = playerDB.getPlayersByDiscordID().get(discordUser.getId());
+        		try {
+        			sendDM(discordUser, "Your elo is " + (int)player.getElo());
+        		}
+        		catch (Exception e) {
+        			sendDM(discordUser, "You are not in the player database yet, please use !profile and set yourself up!");
+        			break done;
+        		}
+        	}
         	else if(msg.contains("!classes"))
         	{        		
         		if(msg.length()==8) 
