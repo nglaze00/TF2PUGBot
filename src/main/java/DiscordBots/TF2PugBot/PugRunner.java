@@ -40,19 +40,35 @@ public class PugRunner
 
 	
 	// Sample sensitive info
+	/**
 	static String token = "token-goes-here";
 	static String discordPugServerId = "608443004776349721"; // Do event.getGuild().getId() to get server ID
 	static String tf2PugServerIP = "ip.address.here"; //FIXME: Store in TF2Server.java
     static int tf2PugServerPort = 11111; //FIXME: Store in TF2Server.java
     static String tf2PugServerRCONPassword = "rconpassgoeshere"; //FIXME: Store in TF2Server.java
+    **/
+	
+    // wild's server
+    /**
+    static String tf2PugServerIP = "192.223.26.144"; //FIXME: Store in TF2Server.java
+    static int tf2PugServerPort = 27015; //FIXME: Store in TF2Server.java
+    static String tf2PugServerRCONPassword = "gaussdeeznuts101"; //FIXME: Store in TF2Server.java
+    **/
+	
+	
+    // serveme
+    static String tf2PugServerIP = "la.serveme.tf"; //FIXME: Store in TF2Server.java
+    static int tf2PugServerPort = 27025; //FIXME: Store in TF2Server.java
+    static String tf2PugServerRCONPassword = "gauss"; //FIXME: Store in TF2Server.java
     
-   
-    
-    
+    // cfg file names (filename.cfg must be on server)
     static String sixesCfg = "ugc_6v_standard"; //FIXME: Store in TF2Server.java
     static String ultiCfg = "etf2l_ultiduo"; //FIXME: Store in TF2Server.java
     static String foursCfg = "ugc_4v_koth"; // Not on server //FIXME: Store in TF2Server.java
 	
+    static String token = "NjA5MjA2MDU1MDk1ODk0MDIx.XV32Tg.J84TdURUUxTXfM9R7QBFe1lDQ6E";
+	static String discordPugServerId = "608443004776349721"; // Do event.getGuild().getId() to get server ID
+    
 	static Guild server;
 	static GuildController controller;
 	static VoiceChannel ultiQueue;
@@ -65,10 +81,10 @@ public class PugRunner
    
     public ArrayList<Game> currentGames = new ArrayList<Game>();
 	public enum Format{ULTIDUO,FOURS,SIXES}
-	TF2Server tf2Server1;
+	TF2Server tf2Server;
 	
 	public PugRunner() {
-		tf2Server1 = new TF2Server(tf2PugServerIP, tf2PugServerPort, tf2PugServerRCONPassword);
+		tf2Server = new TF2Server(tf2PugServerIP, tf2PugServerPort, tf2PugServerRCONPassword);
 		System.out.println("GAUSS");
 
         try //Setup Listeners and JDA
@@ -186,7 +202,7 @@ public class PugRunner
 		}
 
 		// Configure TF2 server
-		tf2Server1.configurePUG(getCfgName(format), format);
+		tf2Server.configurePUG(getCfgName(format), format);
 		// DM each player connect info
 		int teamSize = game.getTeamSize();
 		
@@ -200,7 +216,7 @@ public class PugRunner
 			}
 			for (int j = 0; j < teamSize; j++) {
 				Player player = teams[i][j];
-				PrivateMessageManager.sendDM(jda.getUserById(player.getDiscordID()), tf2Server1.getConnectInfo() 
+				PrivateMessageManager.sendDM(jda.getUserById(player.getDiscordID()), tf2Server.getConnectInfo() 
 						+ "\nteam: " + assignedTeam + " class: " + Game.getClassName(format, player.getAssignedClass()));
 			}
 		}
