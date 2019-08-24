@@ -301,27 +301,21 @@ public class PugRunner
     		catch(Exception e){e.printStackTrace();}
     	}
     	@Override
-    	public void onGuildVoiceMove(GuildVoiceMoveEvent event) {
+    	public void onGuildVoiceMove(GuildVoiceMoveEvent event) 
+    	{
     		Member discordMember = event.getMember();
-    		try 
-    		{
-	    		Player player = playerDB.getPlayersByDiscordID().get(discordMember.getUser().getId());
-	        	String f = event.getChannelJoined().getName();
-	        	Format type = null;
-	        	if(f.equals("Ultiduo Queue")) {type=Format.ULTIDUO;}
-	        	else if(f.equals("4s Queue")) {type=Format.FOURS;}
-	        	else if(f.equals("6s Queue")) {type=Format.SIXES;}
-	    		if(type!=null) {
-	    			if(isQueueFull(type)) {startGame(type);};
-	    		}
-	    	}
-    		//catch(NullPointerException e) 
-    		//{
-    		//	e.printStackTrace();
-    		//	server.getController().moveVoiceMember(discordMember, server.getVoiceChannelsByName("General",true).get(0)).queue();
-    		//	PrivateMessageManager.sendDM(discordMember.getUser(), "You are not in the player database yet, please use !profile and set yourself up!");
-    		//}
-    		catch(Exception e){e.printStackTrace();}
+		String f = event.getChannelJoined().getName();
+    		Format type = null;
+        	if(f.equals("Ultiduo Queue")) {type=Format.ULTIDUO;}
+        	else if(f.equals("4s Queue")) {type=Format.FOURS;}
+        	else if(f.equals("6s Queue")) {type=Format.SIXES;}
+        	if(type!=null) 
+        	{
+        		server.getController().createVoiceChannel("temp");
+        		server.getController().moveVoiceMember(discordMember, server.getVoiceChannelsByName("temp", true).get(0)).queue();
+        		server.getVoiceChannelsByName("temp",true).get(0).delete().queue();
+        		PrivateMessageManager.sendDM(discordMember.getUser(), "Please rejoin the queue, there's a temporary bug with moving voice channels");
+        	}
     	}
     }
 }
