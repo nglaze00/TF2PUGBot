@@ -66,7 +66,7 @@ public class PugRunner
     static String ultiCfg = "etf2l_ultiduo"; //FIXME: Store in TF2Server.java
     static String foursCfg = "ugc_4v_koth"; // Not on server //FIXME: Store in TF2Server.java
 	
-    static String token = "NjA5MjA2MDU1MDk1ODk0MDIx.XV32Tg.J84TdURUUxTXfM9R7QBFe1lDQ6E";
+    static String token = "NjA5MjA2MDU1MDk1ODk0MDIx.XWCY7A.P1VoVjRTLwggtyCuA3RMOP6v57o";
 	static String discordPugServerId = "608443004776349721"; // Do event.getGuild().getId() to get server ID
     
 	static Guild server;
