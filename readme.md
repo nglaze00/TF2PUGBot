@@ -2,7 +2,7 @@
 Discord bot that automates queueing, team balancing, class selection, and game server configuration for Team Fortress 2 pickup games (PUGs). Written in **Java** using  [**JDA**](https://github.com/DV8FromTheWorld/JDA) (Java Discord API) and [**AGQL**](https://github.com/ribasco/async-gamequery-lib) (API for TF2 server configuration); stores player data in **MySQL** database.
 
 ## Overview
-Pick-up games, or competitive matches between teams of individual, unaffiliated players (as opposed to organized teams) are a staple of any video game with a competitive scene. TF2 is no different, but, since the game has a relatively smaller competitive player base, the current most popular PUG site runs their games manually, with a server moderator performing the entire process on their own.
+Pick-up games, or competitive matches between teams of unaffiliated players (as opposed to organized teams) are a staple of any video game with a competitive scene. TF2 is no different, but, since the game has a relatively smaller competitive player base, the current most popular PUG site runs their games manually, with a server moderator performing the entire process on their own.
 
 This bot automates that entire process; instead of having to wait to play until a moderator is present, the bot allows games to be played at any time, and even simultaneously, which is impossible with manually-run games.
 
